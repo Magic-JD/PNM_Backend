@@ -3,10 +3,9 @@ package org.picnmix.max;
 import org.junit.jupiter.api.Test;
 import org.picnmix.FileAccess;
 import org.picnmix.FileAccessImpl;
-import org.picnmix.max.strategy.FindCombosArray;
-import org.picnmix.max.strategy.FindCombosArray2;
-import org.picnmix.max.strategy.FindCombosList;
-import org.picnmix.max.strategy.FindCombosTree;
+import org.picnmix.max.strategy.FindPathsForMatchesArray;
+import org.picnmix.max.strategy.FindPathsForMatchesArray2;
+import org.picnmix.max.strategy.FindPathsForMatchesTree;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -21,7 +20,7 @@ class MaxPerWordTest {
     @Test
     void testThatCalculateBuildsTheCorrectResponsesToInputArray1() throws URISyntaxException, IOException {
         FileAccess fileAccess = new FileAccessImpl("test_dictionary.csv", "test_out.txt");
-        MaxPerWord maxPerWord = new MaxPerWordImpl(fileAccess, new FindCombosArray());
+        MaxPerWord maxPerWord = new MaxPerWordImpl(fileAccess, new FindPathsForMatchesArray());
         maxPerWord.calculate();
         List<String> outputExpected = Files.lines(
                 Paths.get(ClassLoader.getSystemResource("test_out_expected.txt").toURI())
@@ -38,7 +37,7 @@ class MaxPerWordTest {
     @Test
     void testThatCalculateBuildsTheCorrectResponsesToInputArray2() throws URISyntaxException, IOException {
         FileAccess fileAccess = new FileAccessImpl("test_dictionary.csv", "test_out.txt");
-        MaxPerWord maxPerWord = new MaxPerWordImpl(fileAccess, new FindCombosArray2());
+        MaxPerWord maxPerWord = new MaxPerWordImpl(fileAccess, new FindPathsForMatchesArray2());
         maxPerWord.calculate();
         List<String> outputExpected = Files.lines(
                 Paths.get(ClassLoader.getSystemResource("test_out_expected.txt").toURI())
@@ -55,7 +54,7 @@ class MaxPerWordTest {
     @Test
     void testThatCalculateBuildsTheCorrectResponsesToInputTree() throws URISyntaxException, IOException {
         FileAccess fileAccess = new FileAccessImpl("test_dictionary.csv", "test_out.txt");
-        MaxPerWord maxPerWord = new MaxPerWordImpl(fileAccess, new FindCombosTree());
+        MaxPerWord maxPerWord = new MaxPerWordImpl(fileAccess, new FindPathsForMatchesTree());
         maxPerWord.calculate();
         List<String> outputExpected = Files.lines(
                 Paths.get(ClassLoader.getSystemResource("test_out_expected.txt").toURI())

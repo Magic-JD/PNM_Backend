@@ -1,105 +1,108 @@
 package org.picnmix.max.strategy;
 
 import org.picnmix.max.Cache;
-import org.picnmix.max.data.Combos;
+import org.picnmix.max.data.PathedMatch;
 import org.picnmix.max.data.Match;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class FindCombosArray2 implements FindCombos {
+import static java.lang.ThreadLocal.withInitial;
+import static java.util.Comparator.comparingInt;
+import static java.util.stream.Collectors.groupingBy;
 
-    public static final int NUMBER_OF_LEVELS = 4;
+public class FindPathsForMatchesArray2 implements FindPathsForMatches {
+
+    public static final int NUMBER_OF_LEVELS = 4; // 0th indexed the number of levels we have to check
     private final Cache cache = new Cache();
 
     @Override
-    public List<Combos> getCombos(List<Match> matches, Map<Integer, List<String>> encodingToWords, List<Integer> encoded) {
-        Map<Integer, List<Match>> collect = matches.stream().collect(Collectors.groupingBy(match -> match.first() | match.second()));
-        ThreadLocal<int[]> localArray = ThreadLocal.withInitial(() -> encoded.stream().mapToInt(Integer::intValue).toArray());
-        return collect.entrySet().stream().sorted(Comparator.comparingInt(Map.Entry::getKey)).parallel().flatMap(entry -> {
-            int[] encodedArr = localArray.get();
-            int index = sortNeeded(encodedArr, encodedArr.length - 1, entry.getKey());
-            return entry.getValue().stream().flatMap(match -> getCombinationsForMatch(encodingToWords, encodedArr, index, match));
+    public List<PathedMatch> getPathsForMatches(List<Match> matches, Map<Integer, List<String>> encodingToWords, List<Integer> encoded) {
+        Map<Integer, List<Match>> collect = matches.stream().collect(groupingBy(match -> match.first() | match.second()));
+        ThreadLocal<int[]> localArray = withInitial(() -> encoded.stream().mapToInt(Integer::intValue).toArray());
+        return collect.entrySet().stream().sorted(comparingInt(Map.Entry::getKey)).parallel().flatMap(entry -> {
+            int[] encodedArray = localArray.get();
+            int lastValidIndex = sortNeeded(encodedArray, encodedArray.length - 1, entry.getKey());
+            return entry.getValue().stream().flatMap(match -> getPathsForMatch(encodingToWords, encodedArray, lastValidIndex, match));
         }).toList();
     }
 
-    private Stream<Combos> getCombinationsForMatch(Map<Integer, List<String>> encodingToWords, int[] encoded, int index, Match match) {
+    private Stream<PathedMatch> getPathsForMatch(Map<Integer, List<String>> encodingToWords, int[] encoded, int index, Match match) {
         int firstWord = match.first();
         int secondWord = match.second();
-        int sum = calculateValue(firstWord, secondWord, encoded, index, encodingToWords);
-        if (sum == 0) {
+        int paths = calculatePaths(firstWord, secondWord, encoded, index, encodingToWords);
+        if (paths == 0) {
             return Stream.empty();
         }
-        return convertEncodingToCombos(encodingToWords, firstWord, secondWord, sum);
+        return convertEncodedPathsToWordValues(encodingToWords, firstWord, secondWord, paths);
     }
 
-    private Integer calculateValue(int firstWord, int secondWord, int[] encoded, int index, Map<Integer, List<String>> encodingToWords) {
+    private Integer calculatePaths(int firstWord, int secondWord, int[] encoded, int lastValidIndex, Map<Integer, List<String>> encodingToWords) {
+        // Used to store the state while iterating to prevent recursive calls.
         int[] firstIndexPointers = new int[NUMBER_OF_LEVELS];
         int[] currentIndexPointers = new int[NUMBER_OF_LEVELS];
         int[] lastIndexForPosition = new int[NUMBER_OF_LEVELS];
-        int[] currentSumForPosition = new int[NUMBER_OF_LEVELS];
+        int[] currentPathsForPosition = new int[NUMBER_OF_LEVELS]; // Already correctly initialized to 0
         int pointer = NUMBER_OF_LEVELS - 1;
-        int firstNext = sortNext(encoded, index, firstWord); // Index of the first word that is a next word.
-        currentIndexPointers[pointer] = firstNext;
-        firstIndexPointers[pointer] = firstNext;
-        lastIndexForPosition[pointer] = index;
+        int firstIndexForNextWord = sortNext(encoded, lastValidIndex, firstWord); // Index of the first word that is a next word.
+        currentIndexPointers[pointer] = firstIndexForNextWord;
+        firstIndexPointers[pointer] = firstIndexForNextWord;
+        lastIndexForPosition[pointer] = lastValidIndex;
         while (true) { // keep looping until all conditions are checked and the loop is broken.
             if (currentIndexPointers[pointer] > lastIndexForPosition[pointer]) {
-                pointer++; // Have checked all subvalues here
+                pointer++; // Have checked all valid words for this level
                 if (pointer == NUMBER_OF_LEVELS) { // If we have checked all values break out of the loop;
                     break;
                 }
-                int sizeForWord = currentSumForPosition[pointer - 1];
-                cache.put(encoded[currentIndexPointers[pointer]], secondWord, sizeForWord);
-                currentSumForPosition[pointer] += sizeForWord * encodingToWords.get(encoded[currentIndexPointers[pointer]]).size();
-                currentSumForPosition[pointer-1] = 0;
+                int pathsForWord = currentPathsForPosition[pointer - 1];
+                cache.put(encoded[currentIndexPointers[pointer]], secondWord, pathsForWord);
+                currentPathsForPosition[pointer] += pathsForWord * encodingToWords.get(encoded[currentIndexPointers[pointer]]).size();
+                currentPathsForPosition[pointer-1] = 0;
                 currentIndexPointers[pointer]++;
                 continue; // Back up one level and continue with the next words.
             }
             int nextWord = encoded[currentIndexPointers[pointer]]; // get the next word at the current level.
             Integer currentValue = cache.get(nextWord, secondWord);
-            if(currentValue != null){
-                currentSumForPosition[pointer] += currentValue * encodingToWords.get(nextWord).size();
+            if(currentValue != null){ // Check cache
+                currentPathsForPosition[pointer] += currentValue * encodingToWords.get(nextWord).size();
                 currentIndexPointers[pointer]++;
                 continue;
             }
-            pointer--;
-            if (pointer == -1) {
+            pointer--; // Decrease the pointer to go to the next level
+            if (pointer == -1) { // We are one letter away from the goal word, so we can stop now.
                 pointer++;
-                currentSumForPosition[pointer] += encodingToWords.get(encoded[currentIndexPointers[pointer]]).size();
+                currentPathsForPosition[pointer] += encodingToWords.get(encoded[currentIndexPointers[pointer]]).size();
                 currentIndexPointers[pointer]++;
                 continue; // Back up one level and continue with the next words
             }
-            int currentIndex = sortNeeded(encoded, firstIndexPointers[pointer + 1] - 1, nextWord | secondWord, nextWord, secondWord);
-            lastIndexForPosition[pointer] = currentIndex;
-            currentIndexPointers[pointer] = sortNext(encoded, currentIndex, nextWord);
-            firstIndexPointers[pointer] = currentIndexPointers[pointer];
+            int lastValidIndexForLevel = sortNeeded(encoded, firstIndexPointers[pointer + 1] - 1, nextWord | secondWord, nextWord, secondWord);
+            lastIndexForPosition[pointer] = lastValidIndexForLevel;
+            currentIndexPointers[pointer] = sortNext(encoded, lastValidIndexForLevel, nextWord);
+            firstIndexPointers[pointer] = currentIndexPointers[pointer]; // Store the values so that we can check again as we come up.
         }
-        return currentSumForPosition[NUMBER_OF_LEVELS-1];
+        return currentPathsForPosition[NUMBER_OF_LEVELS-1];
     }
 
     /**
-     * @param possibleMatches The array to be sorted: WARNING - MUTATES ARRAY!!!!
+     * @param encoded The array to be sorted: WARNING - MUTATES ARRAY!!!!
      * @param end             the point to sort up to in the array.
      * @param firstWord       the word we are going from
      * @return the index of the first word in the list that is a next word.
      */
-    private int sortNext(int[] possibleMatches, int end, int firstWord) {
+    private int sortNext(int[] encoded, int end, int firstWord) {
         int start = 0;
         while (start <= end) {
-            while (end >= start && Integer.bitCount(possibleMatches[end] ^ firstWord) == 2) {
+            while (end >= start && Integer.bitCount(encoded[end] ^ firstWord) == 2) {
                 end--;
             }
-            while (start <= end && Integer.bitCount(possibleMatches[start] ^ firstWord) != 2) {
+            while (start <= end && Integer.bitCount(encoded[start] ^ firstWord) != 2) {
                 start++;
             }
             if (start < end) {
-                int possibleMatch = possibleMatches[start];
-                possibleMatches[start] = possibleMatches[end];
-                possibleMatches[end] = possibleMatch;
+                int possibleMatch = encoded[start];
+                encoded[start] = encoded[end];
+                encoded[end] = possibleMatch;
                 end--;
                 start++;
             }

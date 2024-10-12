@@ -8,7 +8,7 @@ public class Cache {
 
     private final Map<Long, Integer> store;
 
-    public Cache(){
+    public Cache(){ //Cache created with enormous initial capacity because I want to optimize for speed.
         store = new ConcurrentHashMap<>(10_000_000, 0.75f, 8);
     }
 

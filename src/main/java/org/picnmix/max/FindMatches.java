@@ -8,6 +8,7 @@ import java.util.List;
 public class FindMatches {
 
     public static List<Match> getMatches(List<Integer> encoded) {
+        //Double loop for finding the matches. Even for large outputs this calculates very quickly.
         List<Match> matches = new ArrayList<>();
         for (int i = 0; i < encoded.size(); i++) {
             int firstWord = encoded.get(i);

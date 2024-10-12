@@ -1,7 +1,7 @@
 package org.picnmix.max.strategy;
 
 import org.picnmix.max.Cache;
-import org.picnmix.max.data.Combos;
+import org.picnmix.max.data.PathedMatch;
 import org.picnmix.max.data.Match;
 
 import java.util.List;
@@ -9,17 +9,17 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
-public class FindCombosList implements FindCombos {
+public class FindPathsForMatchesList implements FindPathsForMatches {
 
     private Cache cache = new Cache();
 
     @Override
-    public List<Combos> getCombos(List<Match> matches, Map<Integer, List<String>> encodingToWords, List<Integer> encoded) {
+    public List<PathedMatch> getPathsForMatches(List<Match> matches, Map<Integer, List<String>> encodingToWords, List<Integer> encoded) {
         Map<Integer, List<Integer>> comboMapping = new ConcurrentHashMap<>();
         return matches.parallelStream().flatMap(match -> getCombinationsForMatch(comboMapping, encodingToWords, encoded, match)).toList();
     }
 
-    private Stream<Combos> getCombinationsForMatch(Map<Integer, List<Integer>> comboMapping, Map<Integer, List<String>> encodingToWords, List<Integer> encoded, Match match) {
+    private Stream<PathedMatch> getCombinationsForMatch(Map<Integer, List<Integer>> comboMapping, Map<Integer, List<String>> encodingToWords, List<Integer> encoded, Match match) {
         int firstWord = match.first();
         int secondWord = match.second();
         int comboBits = firstWord | secondWord;
@@ -32,7 +32,7 @@ public class FindCombosList implements FindCombos {
         if (numberOfCombos == 0) {
             return Stream.empty();
         }
-        return convertEncodingToCombos(encodingToWords, firstWord, secondWord, numberOfCombos);
+        return convertEncodedPathsToWordValues(encodingToWords, firstWord, secondWord, numberOfCombos);
     }
 
 
