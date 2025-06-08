@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.picnmix.FileAccess;
 import org.picnmix.FileAccessImpl;
 import org.picnmix.max.strategy.FindPathsForMatchesArray;
-import org.picnmix.max.strategy.FindPathsForMatchesArray2;
+import org.picnmix.max.strategy.FindPathsForMatchesGraph;
 import org.picnmix.max.strategy.FindPathsForMatchesTree;
 
 import java.io.IOException;
@@ -35,9 +35,9 @@ class MaxPerWordTest {
     }
 
     @Test
-    void testThatCalculateBuildsTheCorrectResponsesToInputArray2() throws URISyntaxException, IOException {
+    void testThatCalculateBuildsTheCorrectResponsesToInputGraph() throws URISyntaxException, IOException {
         FileAccess fileAccess = new FileAccessImpl("test_dictionary.csv", "test_out.txt");
-        MaxPerWord maxPerWord = new MaxPerWordImpl(fileAccess, new FindPathsForMatchesArray2());
+        MaxPerWord maxPerWord = new MaxPerWordImpl(fileAccess, new FindPathsForMatchesGraph());
         maxPerWord.calculate();
         List<String> outputExpected = Files.lines(
                 Paths.get(ClassLoader.getSystemResource("test_out_expected.txt").toURI())

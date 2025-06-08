@@ -1,5 +1,6 @@
 package org.picnmix.max;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.IntSupplier;
@@ -13,15 +14,14 @@ public class Cache {
     }
 
     public int getOrCalculate(int firstWord, int secondWord, IntSupplier supplier){
-       return supplier.getAsInt();
-//        long key = calculateTwoWordKey(firstWord, secondWord);
-//        Integer current = store.get(key);
-//        if(current != null){
-//            return current;
-//        }
-//        int updated = supplier.getAsInt();
-//        store.put(key, updated);
-//        return updated;
+        long key = calculateTwoWordKey(firstWord, secondWord);
+        Integer current = store.get(key);
+        if(current != null){
+            return current;
+        }
+        int updated = supplier.getAsInt();
+        store.put(key, updated);
+        return updated;
     }
 
     public Integer get(int firstWord, int secondWord){

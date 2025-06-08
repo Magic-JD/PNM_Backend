@@ -7,35 +7,34 @@ import org.picnmix.max.data.Match;
 import java.util.*;
 
 import static java.lang.Integer.bitCount;
+import static java.lang.Integer.lowestOneBit;
 
 public class FindPathsForMatchesGraph implements FindPathsForMatches {
 
 
     private final Cache cache = new Cache();
-    private Map<Integer, List<String>> encodingToWords;
     private Map<Integer, int[]> graph;
 
     @Override
     public List<PathedMatch> getPathsForMatches(List<Match> matches, Map<Integer, List<String>> encodingToWords, List<Integer> encoded) {
-        this.encodingToWords = encodingToWords;
         graph = new HashMap<>();
-        encoded.forEach(e -> graph.put(e, new int[5]));
+        encoded.forEach(e -> graph.put(e, new int[]{0, 0, 0, 0, 0, encodingToWords.get(e).size()}));
         for(int i = 0; i < encoded.size(); i++){
             for (int j = i+1; j < encoded.size(); j++) {
-                Integer na = encoded.get(i);
-                Integer nb = encoded.get(j);
+                Integer first = encoded.get(i);
+                Integer second = encoded.get(j);
 
-                int switchedBits = na ^ nb;
+                int switchedBits = first ^ second;
                 if (bitCount(switchedBits) == 2){
-                    updateGraph(graph, na, switchedBits, nb);
-                    updateGraph(graph, nb, switchedBits, na);
+                    updateGraph(graph, first, switchedBits, second);
+                    updateGraph(graph, second, switchedBits, first);
                 }
             }
         }
         return matches.stream().parallel().flatMap(combination -> {
             int start = combination.first();
             int end = combination.second();
-            int numberOfCombinations = cache.getOrCalculate(start, end, () -> calcFunc(start, end));
+            int numberOfCombinations = calcFunc(start, end, graph.get(start));
             var firstWords = encodingToWords.get(combination.first());
             var secondWords = encodingToWords.get(combination.second());
             List<PathedMatch> pathedMatches = new ArrayList<>();
@@ -49,56 +48,54 @@ public class FindPathsForMatchesGraph implements FindPathsForMatches {
 
     }
 
-    private static void updateGraph(Map<Integer, int[]> graph, Integer first, int switchedBits, Integer second) {
-        int[] nodeArr = graph.get(first);
-        int toBit = switchedBits & ~first;
-        int fromBit = switchedBits & ~second;
-        int idx = getSetBitIndex(first, fromBit);
+    private static void updateGraph(Map<Integer, int[]> graph, int from, int switchedBits, int to) {
+        int[] nodeArr = graph.get(from);
+        int toBit = switchedBits & ~from;
+        int fromBit = switchedBits & ~to;
+        int idx = getSetBitIndex(from, fromBit);
         nodeArr[idx] |= toBit;
     }
 
     private int calculateComboR(int current, int end) {
+        int[] neighbourEncoding = graph.get(current);
         if(bitCount(current ^ end) == 2){
-            return encodingToWords.get(current).size();
+            return neighbourEncoding[5];
         }
-        return cache.getOrCalculate(current, end, () -> calcFunc(current, end)) * encodingToWords.get(current).size();
+        return cache.getOrCalculate(current, end, () -> calcFunc(current, end, neighbourEncoding)) * neighbourEncoding[5];
     }
 
 
-    private int calcFunc(int current, int end) {
+    private int calcFunc(int current, int end, int[] neighbourEncoding) {
         int count = 0;
-        int[] neighbourEncoding = graph.get(current);
         int bitsThatCanChange = current & ~end;
         int bitsToChangeTo = end & ~current;
         while(bitsThatCanChange != 0){
-            int mutableBitsToChangeTo = bitsToChangeTo;
-            int highestChangeableBit = Integer.highestOneBit(bitsThatCanChange);
-            int validNeighbourChangedBits = neighbourEncoding[getSetBitIndex(current, highestChangeableBit)];
-            while(mutableBitsToChangeTo != 0){
-                int highestBitToCheck = Integer.highestOneBit(mutableBitsToChangeTo);
-                if((validNeighbourChangedBits | highestBitToCheck) == validNeighbourChangedBits){
-                    int nextCurrent = current ^ (highestChangeableBit | highestBitToCheck);
-                    count += calculateComboR(nextCurrent, end);
-                }
-                mutableBitsToChangeTo = mutableBitsToChangeTo ^ highestBitToCheck;
+            int changeableBit = lowestOneBit(bitsThatCanChange);
+            int validNeighbourChangedBits = neighbourEncoding[getSetBitIndex(current, changeableBit)];
+            int bitsInNeighbour = validNeighbourChangedBits & bitsToChangeTo;
+            while(bitsInNeighbour != 0){
+                int goalBit = lowestOneBit(bitsInNeighbour);
+                int nextCurrent = current ^ (changeableBit | goalBit);
+                count += calculateComboR(nextCurrent, end);
+                bitsInNeighbour = bitsInNeighbour ^ goalBit;
             }
-            bitsThatCanChange = bitsThatCanChange ^ highestChangeableBit;
+            bitsThatCanChange = bitsThatCanChange ^ changeableBit;
 
         }
         return count;
     }
 
     private static int getSetBitIndex(int number, int bit) {
-        int count = 0;
+        int idx = 0;
         while (number != 0){
-            int highest = Integer.highestOneBit(number);
-            if (highest == bit) {
-                return count;
+            int lowest = lowestOneBit(number);
+            if (lowest == bit) {
+                return idx;
             }
-            number = number ^ highest;
-            count++;
+            number = number ^ lowest;
+            idx++;
         }
-        throw new IllegalArgumentException("Not enough set bits");
+        throw new IllegalArgumentException("Bit must be set in number");
     }
 }
 
