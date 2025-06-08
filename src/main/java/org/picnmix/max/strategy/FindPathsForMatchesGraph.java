@@ -18,6 +18,8 @@ public class FindPathsForMatchesGraph implements FindPathsForMatches {
     @Override
     public List<PathedMatch> getPathsForMatches(List<Match> matches, Map<Integer, List<String>> encodingToWords, List<Integer> encoded) {
         graph = new HashMap<>();
+        // Adding the total number of anagrams to the array
+        // Not neat, but removing the repeated calls to encodingToWords.get(word).size() shaved 20% off the time.
         encoded.forEach(e -> graph.put(e, new int[]{0, 0, 0, 0, 0, encodingToWords.get(e).size()}));
         for(int i = 0; i < encoded.size(); i++){
             for (int j = i+1; j < encoded.size(); j++) {
@@ -26,6 +28,7 @@ public class FindPathsForMatchesGraph implements FindPathsForMatches {
 
                 int switchedBits = first ^ second;
                 if (bitCount(switchedBits) == 2){
+                    // Update the graph to reflect the neighbor relationship
                     updateGraph(graph, first, switchedBits, second);
                     updateGraph(graph, second, switchedBits, first);
                 }
@@ -38,6 +41,7 @@ public class FindPathsForMatchesGraph implements FindPathsForMatches {
             var firstWords = encodingToWords.get(combination.first());
             var secondWords = encodingToWords.get(combination.second());
             List<PathedMatch> pathedMatches = new ArrayList<>();
+            // Add all anagram combinations of the first and second word.
             for (String firstWord : firstWords) {
                 for (String secondWord : secondWords) {
                     pathedMatches.add(new PathedMatch(numberOfCombinations, firstWord, secondWord));
@@ -49,6 +53,7 @@ public class FindPathsForMatchesGraph implements FindPathsForMatches {
     }
 
     private static void updateGraph(Map<Integer, int[]> graph, int from, int switchedBits, int to) {
+        // Set the neighbor mask to reflect the words that can be created by changing the from bit.
         int[] nodeArr = graph.get(from);
         int toBit = switchedBits & ~from;
         int fromBit = switchedBits & ~to;
@@ -58,6 +63,8 @@ public class FindPathsForMatchesGraph implements FindPathsForMatches {
 
     private int calculateComboR(int current, int end) {
         int[] neighbourEncoding = graph.get(current);
+        // If we are one step away we know the only valid word is the end word and we know it exists.
+        // Therefore, we can return.
         if(bitCount(current ^ end) == 2){
             return neighbourEncoding[5];
         }
@@ -69,10 +76,13 @@ public class FindPathsForMatchesGraph implements FindPathsForMatches {
         int count = 0;
         int bitsThatCanChange = current & ~end;
         int bitsToChangeTo = end & ~current;
+        // For each bit that can change we retrieve the relevant bitmask.
         while(bitsThatCanChange != 0){
             int changeableBit = lowestOneBit(bitsThatCanChange);
             int validNeighbourChangedBits = neighbourEncoding[getSetBitIndex(current, changeableBit)];
+            // Find all valid next words that contain the letters we need.
             int bitsInNeighbour = validNeighbourChangedBits & bitsToChangeTo;
+            // For each bit, calculate the next word and recurse.
             while(bitsInNeighbour != 0){
                 int goalBit = lowestOneBit(bitsInNeighbour);
                 int nextCurrent = current ^ (changeableBit | goalBit);
@@ -86,6 +96,8 @@ public class FindPathsForMatchesGraph implements FindPathsForMatches {
     }
 
     private static int getSetBitIndex(int number, int bit) {
+        // Gets the relevant bit index. Technically it is faster to have an array of size 26 and then use the
+        // bit position directly, but this increases the space and the cost of this operation is fairly low.
         int idx = 0;
         while (number != 0){
             int lowest = lowestOneBit(number);
