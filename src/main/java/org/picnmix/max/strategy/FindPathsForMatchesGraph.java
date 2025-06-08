@@ -4,7 +4,6 @@ import org.picnmix.max.Cache;
 import org.picnmix.max.data.PathedMatch;
 import org.picnmix.max.data.Match;
 
-import java.math.BigInteger;
 import java.util.*;
 
 import static java.lang.Integer.bitCount;
@@ -14,7 +13,7 @@ public class FindPathsForMatchesGraph implements FindPathsForMatches {
 
     private final Cache cache = new Cache();
     private Map<Integer, List<String>> etw;
-    private Map<Integer, List<Integer>> all;
+    private Map<Integer, List<Integer>> graph;
 
     @Override
     public List<PathedMatch> getPathsForMatches(List<Match> matches, Map<Integer, List<String>> encodingToWords, List<Integer> encoded) {
@@ -32,7 +31,7 @@ public class FindPathsForMatchesGraph implements FindPathsForMatches {
                 }
             }
         }
-        all = ints;
+        graph = ints;
 
 
         List<PathedMatch> list = matches.parallelStream().flatMap(c -> {
@@ -66,7 +65,7 @@ public class FindPathsForMatchesGraph implements FindPathsForMatches {
     private int calcFunc(int na, int nb) {
         int curr = bitCount(na ^ nb);
 
-        List<Integer> integers = all.get(na);
+        List<Integer> integers = graph.get(na);
         return integers.stream()
                 .filter(n -> bitCount(n ^ nb) < curr)
                 .map(n -> calculateComboR(n, nb))
