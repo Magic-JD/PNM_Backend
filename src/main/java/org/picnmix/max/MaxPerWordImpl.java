@@ -45,11 +45,20 @@ public class MaxPerWordImpl implements MaxPerWord {
      * Finally the output is converted to a string and then written to a file.
      */
     public void calculate() {
+        long start3 = System.nanoTime();
         List<String> words = fileAccess.extractWordsFromFile();
         Map<Integer, List<String>> encodeToWords = createEncodeToWordsMapping(words);
         List<Integer> encoded = new ArrayList<>(encodeToWords.keySet());
         List<Match> matches = getMatches(encoded);
+        long start2 = System.nanoTime();
+        System.out.println((start2 - start3)/1_000_000);
         List<PathedMatch> comboList = findPathsForMatches.getPathsForMatches(matches, encodeToWords, encoded);
+        long end2 = System.nanoTime();
+        System.out.println((end2 - start2)/1_000_000);
+        long start = System.nanoTime();
         fileAccess.writeToOutput(convertToOutputString(comboList));
+        long end = System.nanoTime();
+        System.out.println((end - start)/1_000_000);
+        System.out.println("Total found: " + comboList.stream().map(c -> c.combinations()).mapToLong(i -> i).sum());
     }
 }

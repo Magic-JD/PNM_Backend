@@ -5,10 +5,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Queue;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -44,8 +41,12 @@ public class CalculatePathsPerPair {
     }
 
     public void calculate() {
-        List<Pair> list = pairs.stream().filter(pair -> pair.combinations == 1).filter(pair -> words.contains(pair.start) && words.contains(pair.end)).toList();
-        list.forEach(pair -> calculate(pair.start, pair.end));
+        List<Pair> list = pairs.stream().filter(pair -> pair.combinations == 1 && !pair.start.contains("Y") && !pair.end.contains("Y")).toList();
+       // list.forEach(pair -> calculate(pair.start, pair.end));
+        calculate("PIVOT", "BEGUM");
+        // Prang -> dutch START: PRANG END: DUTCH PATH PRANG, GRANT, GAUNT, DAUNT, DUCAT
+        //START: PIVOT END: BEGUM PATH PIVOT, VOMIT, MOVIE, BIOME, IMBUE
+        //
     }
 
     private void calculate(String word, String endWord) {

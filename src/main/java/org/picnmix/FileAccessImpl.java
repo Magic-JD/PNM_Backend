@@ -27,7 +27,7 @@ public class FileAccessImpl implements FileAccess {
         Path path = getPath(in);
         try (Stream<String> lines = Files.lines(path)) {
             Set<String> allWords = lines.collect(Collectors.toSet());
-            return allWords.stream().toList();
+            return allWords.stream().filter(w -> w.length() == 5).filter(w -> w.chars().distinct().count() == 5).toList();
         } catch (IOException e) {
             throw new RuntimeException();
         }
@@ -35,12 +35,12 @@ public class FileAccessImpl implements FileAccess {
 
     @Override
     public void writeToOutput(String output) {
-//        Path path = getPath(out);
-//        try {
-//            Files.writeString(path, output, StandardOpenOption.TRUNCATE_EXISTING);
-//        } catch (IOException e) {
-//            throw new RuntimeException(e);
-//        }
+        Path path = getPath(out);
+        try {
+            Files.writeString(path, output, StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private Path getPath(String name) {

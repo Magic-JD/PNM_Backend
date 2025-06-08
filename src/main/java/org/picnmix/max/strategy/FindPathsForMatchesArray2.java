@@ -21,7 +21,7 @@ public class FindPathsForMatchesArray2 implements FindPathsForMatches {
     public List<PathedMatch> getPathsForMatches(List<Match> matches, Map<Integer, List<String>> encodingToWords, List<Integer> encoded) {
         Map<Integer, List<Match>> collect = matches.stream().collect(groupingBy(match -> match.first() | match.second()));
         ThreadLocal<int[]> localArray = withInitial(() -> encoded.stream().mapToInt(Integer::intValue).toArray());
-        return collect.entrySet().stream().sorted(comparingInt(Map.Entry::getKey)).parallel().flatMap(entry -> {
+        return collect.entrySet().parallelStream().flatMap(entry -> {
             int[] encodedArray = localArray.get();
             int lastValidIndex = sortNeeded(encodedArray, encodedArray.length - 1, entry.getKey());
             return entry.getValue().stream().flatMap(match -> getPathsForMatch(encodingToWords, encodedArray, lastValidIndex, match));
@@ -56,19 +56,19 @@ public class FindPathsForMatchesArray2 implements FindPathsForMatches {
                     break;
                 }
                 int pathsForWord = currentPathsForPosition[pointer - 1];
-                cache.put(encoded[currentIndexPointers[pointer]], secondWord, pathsForWord);
+ //               cache.put(encoded[currentIndexPointers[pointer]], secondWord, pathsForWord);
                 currentPathsForPosition[pointer] += pathsForWord * encodingToWords.get(encoded[currentIndexPointers[pointer]]).size();
                 currentPathsForPosition[pointer-1] = 0;
                 currentIndexPointers[pointer]++;
                 continue; // Back up one level and continue with the next words.
             }
             int nextWord = encoded[currentIndexPointers[pointer]]; // get the next word at the current level.
-            Integer currentValue = cache.get(nextWord, secondWord);
-            if(currentValue != null){ // Check cache
-                currentPathsForPosition[pointer] += currentValue * encodingToWords.get(nextWord).size();
-                currentIndexPointers[pointer]++;
-                continue;
-            }
+//            Integer currentValue = cache.get(nextWord, secondWord);
+//            if(currentValue != null){ // Check cache
+//                currentPathsForPosition[pointer] += currentValue * encodingToWords.get(nextWord).size();
+//                currentIndexPointers[pointer]++;
+//                continue;
+//            }
             pointer--; // Decrease the pointer to go to the next level
             if (pointer == -1) { // We are one letter away from the goal word, so we can stop now.
                 pointer++;

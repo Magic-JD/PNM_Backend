@@ -18,9 +18,9 @@ public class WordMappingCreator {
             // This will become a binary representation of the word, with the character a being 1, b being 10 and so on.
             int sum = 0;
             int or = 0;
-            for (int i = 0; i < chars.length; i++) {
-                chars[i] -= 'A';
-                int shift = 1 << chars[i];
+            for (char c : chars) {
+                c -= 'A';
+                int shift = 1 << c;
                 sum += shift;
                 or |= shift;
             }

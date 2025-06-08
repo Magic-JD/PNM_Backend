@@ -13,19 +13,21 @@ public class Cache {
     }
 
     public int getOrCalculate(int firstWord, int secondWord, IntSupplier supplier){
-        long key = calculateTwoWordKey(firstWord, secondWord);
-        Integer current = store.get(key);
-        if(current != null){
-            return current;
-        }
-        int updated = supplier.getAsInt();
-        store.put(key, updated);
-        return updated;
+       return supplier.getAsInt();
+//        long key = calculateTwoWordKey(firstWord, secondWord);
+//        Integer current = store.get(key);
+//        if(current != null){
+//            return current;
+//        }
+//        int updated = supplier.getAsInt();
+//        store.put(key, updated);
+//        return updated;
     }
 
     public Integer get(int firstWord, int secondWord){
         return store.get(calculateTwoWordKey(firstWord, secondWord));
     }
+
     public void put(int firstWord, int secondWord, int value){
         store.put(calculateTwoWordKey(firstWord, secondWord), value);
     }

@@ -4,6 +4,7 @@ import org.picnmix.max.Cache;
 import org.picnmix.max.data.PathedMatch;
 import org.picnmix.max.data.Match;
 
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -21,11 +22,12 @@ public class FindPathsForMatchesArray implements FindPathsForMatches {
     public List<PathedMatch> getPathsForMatches(List<Match> matches, Map<Integer, List<String>> encodingToWords, List<Integer> encoded) {
         Map<Integer, List<Match>> collect = matches.stream().collect(groupingBy(match -> match.first() | match.second()));
         ThreadLocal<int[]> localArray = withInitial(() -> encoded.stream().mapToInt(Integer::intValue).toArray());
-        return collect.entrySet().stream().sorted(comparingInt(Map.Entry::getKey)).parallel().flatMap(entry -> {
+        List<PathedMatch> list = collect.entrySet().stream().sorted(comparingInt(Map.Entry::getKey)).parallel().flatMap(entry -> {
             int[] encodedArray = localArray.get();
             int lastValidIndex = sortNeeded(encodedArray, encodedArray.length - 1, entry.getKey());
             return entry.getValue().stream().flatMap(match -> getPathsForMatch(encodingToWords, encodedArray, lastValidIndex, match));
         }).toList();
+        return list;
     }
 
     private Stream<PathedMatch> getPathsForMatch(Map<Integer, List<String>> encodingToWords, int[] encoded, int lastValidIndex, Match match) {
@@ -70,11 +72,9 @@ public class FindPathsForMatchesArray implements FindPathsForMatches {
         int start = 0;
         while (start <= end) {
             while (end >= start && bitCount(encoded[end] ^ firstWord) == 2) {
-
                 end--;
             }
             while (start <= end && bitCount(encoded[start] ^ firstWord) != 2) {
-
                 start++;
             }
             if (start < end) {
@@ -136,6 +136,4 @@ public class FindPathsForMatchesArray implements FindPathsForMatches {
         // Return the last valid index.
         return end;
     }
-
-
 }
