@@ -22,12 +22,17 @@ public class FindPathsForMatchesArray implements FindPathsForMatches {
     public List<PathedMatch> getPathsForMatches(List<Match> matches, Map<Integer, List<String>> encodingToWords, List<Integer> encoded) {
         Map<Integer, List<Match>> collect = matches.stream().collect(groupingBy(match -> match.first() | match.second()));
         ThreadLocal<int[]> localArray = withInitial(() -> encoded.stream().mapToInt(Integer::intValue).toArray());
-        List<PathedMatch> list = collect.entrySet().stream().sorted(comparingInt(Map.Entry::getKey)).parallel().flatMap(entry -> {
-            int[] encodedArray = localArray.get();
-            int lastValidIndex = sortNeeded(encodedArray, encodedArray.length - 1, entry.getKey());
-            return entry.getValue().stream().flatMap(match -> getPathsForMatch(encodingToWords, encodedArray, lastValidIndex, match));
+        return collect.entrySet()
+                .stream()
+                .sorted(comparingInt(Map.Entry::getKey))
+                .parallel()
+                .flatMap(entry -> {
+                    int[] encodedArray = localArray.get();
+                    int lastValidIndex = sortNeeded(encodedArray, encodedArray.length - 1, entry.getKey());
+                    return entry.getValue()
+                            .stream()
+                            .flatMap(match -> getPathsForMatch(encodingToWords, encodedArray, lastValidIndex, match));
         }).toList();
-        return list;
     }
 
     private Stream<PathedMatch> getPathsForMatch(Map<Integer, List<String>> encodingToWords, int[] encoded, int lastValidIndex, Match match) {
@@ -63,10 +68,10 @@ public class FindPathsForMatchesArray implements FindPathsForMatches {
     }
 
     /**
-     * @param encoded The array to be sorted: WARNING - MUTATES ARRAY!!!!
+     * @param encoded         The array to be sorted: WARNING - MUTATES ARRAY!!!!
      * @param end             the point to sort up to in the array.
      * @param firstWord       the word we are going from
-     * @return the index of the first word in the list that is a next word.
+     * @return                the index of the first word in the list that is a next word.
      */
     private int sortNext(int[] encoded, int end, int firstWord) {
         int start = 0;
